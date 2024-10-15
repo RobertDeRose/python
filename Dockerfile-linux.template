@@ -5,6 +5,9 @@
 	def is_slim:
 		env.variant | startswith("slim-")
 	;
+	def is_bullseye:
+		env.variant | contains("bullseye")
+	;
 	def rcVersion:
 		env.version | rtrimstr("-rc")
 -}}
@@ -192,10 +195,16 @@ RUN set -eux; \
 {{ if is_slim or is_alpine then ( -}}
 	LDFLAGS="${LDFLAGS:--Wl},--strip-all"; \
 {{ ) else "" end -}}
+{{ if ([ "3.13" ] | index(rcVersion)) and (is_alpine or is_bullseye) then ( -}}
+# Workaround https://github.com/python/cpython/issues/125067
+	sed -i -E \
+		-e 's:(\$\(LLVM_PROF_FILE\) \$\(RUNSHARED\) ./\$\(BUILDPYTHON\) \$\(PROFILE_TASK\)):\1 || true:' \
+		-e 's:TESTTIMEOUT=$:TESTTIMEOUT=    1200:' Makefile \
+	; \
+{{ ) else "" end -}}
 	make -j "$nproc" \
 		"EXTRA_CFLAGS=${EXTRA_CFLAGS:-}" \
 		"LDFLAGS=${LDFLAGS:-}" \
-		"PROFILE_TASK=${PROFILE_TASK:-}" \
 	; \
 # https://github.com/docker-library/python/issues/784
 # prevent accidental usage of a system installed libpython of the same version
@@ -203,7 +212,6 @@ RUN set -eux; \
 	make -j "$nproc" \
 		"EXTRA_CFLAGS=${EXTRA_CFLAGS:-}" \
 		"LDFLAGS=${LDFLAGS:--Wl},-rpath='\$\$ORIGIN/../lib'" \
-		"PROFILE_TASK=${PROFILE_TASK:-}" \
 		python \
 	; \
 	make install; \
