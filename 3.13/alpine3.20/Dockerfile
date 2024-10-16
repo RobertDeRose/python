@@ -82,10 +82,36 @@ RUN set -eux; \
 # https://github.com/alpinelinux/aports/commit/2026e1259422d4e0cf92391ca2d3844356c649d0
 	EXTRA_CFLAGS="-DTHREAD_STACK_SIZE=0x100000"; \
 	LDFLAGS="${LDFLAGS:--Wl},--strip-all"; \
+# Workaround https://github.com/python/cpython/issues/125067
+	printf '%s\n' \
+		"diff --git a/Lib/test/test_xml_etree.py b/Lib/test/test_xml_etree.py" \
+		"index ebec9d8f18a..385735c1e18 100644" \
+		"--- a/Lib/test/test_xml_etree.py" \
+		"+++ b/Lib/test/test_xml_etree.py" \
+		"@@ -1504,9 +1504,11 @@ def test_simple_xml(self, chunk_size=None, flush=False):" \
+		"         self.assert_event_tags(parser, [('end', 'root')])" \
+		"         self.assertIsNone(parser.close())" \
+		"" \
+		"+    @unittest.skip('Work around: https://github.com/python/cpython/issues/125067')" \
+		"     def test_simple_xml_chunk_1(self):" \
+		"         self.test_simple_xml(chunk_size=1, flush=True)" \
+		"" \
+		"+    @unittest.skip('Work around: https://github.com/python/cpython/issues/125067')" \
+		"     def test_simple_xml_chunk_5(self):" \
+		"         self.test_simple_xml(chunk_size=5, flush=True)" \
+		"" \
+		"@@ -1731,6 +1733,7 @@ def test_flush_reparse_deferral_enabled(self):" \
+		"" \
+		"         self.assert_event_tags(parser, [('end', 'doc')])" \
+		"" \
+		"+    @unittest.skip('Work around: https://github.com/python/cpython/issues/125067')" \
+		"     def test_flush_reparse_deferral_disabled(self):" \
+		"         parser = ET.XMLPullParser(events=('start', 'end'))" > /tmp/python-3.13-libexpat-workaround.patch ; \
+	patch -p1  </tmp/python-3.13-libexpat-workaround.patch || true ; \
+	\
 	make -j "$nproc" \
 		"EXTRA_CFLAGS=${EXTRA_CFLAGS:-}" \
 		"LDFLAGS=${LDFLAGS:-}" \
-		"PROFILE_TASK=${PROFILE_TASK:-}" \
 	; \
 # https://github.com/docker-library/python/issues/784
 # prevent accidental usage of a system installed libpython of the same version
@@ -93,7 +119,6 @@ RUN set -eux; \
 	make -j "$nproc" \
 		"EXTRA_CFLAGS=${EXTRA_CFLAGS:-}" \
 		"LDFLAGS=${LDFLAGS:--Wl},-rpath='\$\$ORIGIN/../lib'" \
-		"PROFILE_TASK=${PROFILE_TASK:-}" \
 		python \
 	; \
 	make install; \
@@ -103,8 +128,8 @@ RUN set -eux; \
 	\
 	find /usr/local -depth \
 		\( \
-			\( -type d -a \( -name test -o -name tests -o -name idle_test \) \) \
-			-o \( -type f -a \( -name '*.pyc' -o -name '*.pyo' -o -name 'libpython*.a' \) \) \
+			\( -type d -a \( -name test -o -name tests -o -name idle_test -o -name __pycache__ \) \) -o \
+			\( -type f -a \( -name '*.py[co]' -o -name 'libpython*.a' -o -name *test*.so \) \) \
 		\) -exec rm -rf '{}' + \
 	; \
 	\

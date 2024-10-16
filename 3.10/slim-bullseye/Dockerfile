@@ -87,7 +87,6 @@ RUN set -eux; \
 	make -j "$nproc" \
 		"EXTRA_CFLAGS=${EXTRA_CFLAGS:-}" \
 		"LDFLAGS=${LDFLAGS:-}" \
-		"PROFILE_TASK=${PROFILE_TASK:-}" \
 	; \
 # https://github.com/docker-library/python/issues/784
 # prevent accidental usage of a system installed libpython of the same version
@@ -95,7 +94,6 @@ RUN set -eux; \
 	make -j "$nproc" \
 		"EXTRA_CFLAGS=${EXTRA_CFLAGS:-}" \
 		"LDFLAGS=${LDFLAGS:--Wl},-rpath='\$\$ORIGIN/../lib'" \
-		"PROFILE_TASK=${PROFILE_TASK:-}" \
 		python \
 	; \
 	make install; \
@@ -105,8 +103,8 @@ RUN set -eux; \
 	\
 	find /usr/local -depth \
 		\( \
-			\( -type d -a \( -name test -o -name tests -o -name idle_test \) \) \
-			-o \( -type f -a \( -name '*.pyc' -o -name '*.pyo' -o -name 'libpython*.a' \) \) \
+			\( -type d -a \( -name test -o -name tests -o -name idle_test -o -name __pycache__ \) \) -o \
+			\( -type f -a \( -name '*.py[co]' -o -name 'libpython*.a' -o -name *test*.so \) \) \
 		\) -exec rm -rf '{}' + \
 	; \
 	\
