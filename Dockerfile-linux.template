@@ -20,14 +20,14 @@ FROM buildpack-deps:{{ env.variant }}
 {{ ) end -}}
 
 # ensure local python is preferred over distribution python
-ENV PATH /usr/local/bin:$PATH
+ENV PATH=/usr/local/bin:$PATH
 
 {{ if [ "3.9", "3.10", "3.11", "3.12" ] | index(rcVersion) then ( -}}
 {{ # only set LANG on versions less than 3.13 -}}
 # cannot remove LANG even though https://bugs.python.org/issue19846 is fixed
 # last attempted removal of LANG broke many users:
 # https://github.com/docker-library/python/pull/570
-ENV LANG C.UTF-8
+ENV LANG=C.UTF-8
 
 {{ ) else "" end -}}
 # runtime dependencies
@@ -54,7 +54,7 @@ RUN set -eux; \
 	rm -rf /var/lib/apt/lists/*
 {{ ) end -}}
 
-ENV GPG_KEY {{
+ENV GPG_KEY={{
 	{
 		# gpg: key B26995E310250568: public key "\xc5\x81ukasz Langa (GPG langa.pl) <lukasz@langa.pl>" imported
 		"3.9": "E3FF2839C048B25C084DEBE9B26995E310250568",
@@ -77,9 +77,9 @@ ENV GPG_KEY {{
 		# https://peps.python.org/pep-0719/#release-manager-and-crew
 	}[rcVersion]
 }}
-ENV PYTHON_VERSION {{ .version }}
+ENV PYTHON_VERSION={{ .version }}
 {{ if .checksums.source.sha256 then ( -}}
-ENV PYTHON_SHA256 {{ .checksums.source.sha256 }}
+ENV PYTHON_SHA256={{ .checksums.source.sha256 }}
 {{ ) else "" end -}}
 
 RUN set -eux; \
