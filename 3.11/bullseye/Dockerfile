@@ -7,12 +7,12 @@
 FROM buildpack-deps:bullseye
 
 # ensure local python is preferred over distribution python
-ENV PATH /usr/local/bin:$PATH
+ENV PATH=/usr/local/bin:$PATH
 
 # cannot remove LANG even though https://bugs.python.org/issue19846 is fixed
 # last attempted removal of LANG broke many users:
 # https://github.com/docker-library/python/pull/570
-ENV LANG C.UTF-8
+ENV LANG=C.UTF-8
 
 # runtime dependencies
 RUN set -eux; \
@@ -24,9 +24,9 @@ RUN set -eux; \
 	; \
 	rm -rf /var/lib/apt/lists/*
 
-ENV GPG_KEY A035C8C19219BA821ECEA86B64E628F8D684696D
-ENV PYTHON_VERSION 3.11.10
-ENV PYTHON_SHA256 07a4356e912900e61a15cb0949a06c4a05012e213ecd6b4e84d0f67aabbee372
+ENV GPG_KEY=A035C8C19219BA821ECEA86B64E628F8D684696D
+ENV PYTHON_VERSION=3.11.10
+ENV PYTHON_SHA256=07a4356e912900e61a15cb0949a06c4a05012e213ecd6b4e84d0f67aabbee372
 
 RUN set -eux; \
 	\
@@ -60,7 +60,6 @@ RUN set -eux; \
 	make -j "$nproc" \
 		"EXTRA_CFLAGS=${EXTRA_CFLAGS:-}" \
 		"LDFLAGS=${LDFLAGS:-}" \
-		"PROFILE_TASK=${PROFILE_TASK:-}" \
 	; \
 # https://github.com/docker-library/python/issues/784
 # prevent accidental usage of a system installed libpython of the same version
@@ -68,7 +67,6 @@ RUN set -eux; \
 	make -j "$nproc" \
 		"EXTRA_CFLAGS=${EXTRA_CFLAGS:-}" \
 		"LDFLAGS=${LDFLAGS:--Wl},-rpath='\$\$ORIGIN/../lib'" \
-		"PROFILE_TASK=${PROFILE_TASK:-}" \
 		python \
 	; \
 	make install; \
@@ -82,12 +80,9 @@ RUN set -eux; \
 	cd /; \
 	rm -rf /usr/src/python; \
 	\
-	find /usr/local -depth \
-		\( \
-			\( -type d -a \( -name test -o -name tests -o -name idle_test \) \) \
-			-o \( -type f -a \( -name '*.pyc' -o -name '*.pyo' -o -name 'libpython*.a' \) \) \
-		\) -exec rm -rf '{}' + \
-	; \
+	find /usr/local -type d \( -name test -o -name idle_test -o -name __pycache__ \) -exec rm -rf '{}' +; \
+	find /usr/local -type f -name libpython3*.a -delete; \
+	find /usr/local -type f -name *test*.so -delete; \
 	\
 	ldconfig; \
 	\

@@ -7,7 +7,7 @@
 FROM buildpack-deps:bookworm
 
 # ensure local python is preferred over distribution python
-ENV PATH /usr/local/bin:$PATH
+ENV PATH=/usr/local/bin:$PATH
 
 # runtime dependencies
 RUN set -eux; \
@@ -19,9 +19,9 @@ RUN set -eux; \
 	; \
 	rm -rf /var/lib/apt/lists/*
 
-ENV GPG_KEY 7169605F62C751356D054A26A821E680E5FA6305
-ENV PYTHON_VERSION 3.13.0
-ENV PYTHON_SHA256 086de5882e3cb310d4dca48457522e2e48018ecd43da9cdf827f6a0759efb07d
+ENV GPG_KEY=7169605F62C751356D054A26A821E680E5FA6305
+ENV PYTHON_VERSION=3.13.0
+ENV PYTHON_SHA256=086de5882e3cb310d4dca48457522e2e48018ecd43da9cdf827f6a0759efb07d
 
 RUN set -eux; \
 	\
@@ -55,7 +55,6 @@ RUN set -eux; \
 	make -j "$nproc" \
 		"EXTRA_CFLAGS=${EXTRA_CFLAGS:-}" \
 		"LDFLAGS=${LDFLAGS:-}" \
-		"PROFILE_TASK=${PROFILE_TASK:-}" \
 	; \
 # https://github.com/docker-library/python/issues/784
 # prevent accidental usage of a system installed libpython of the same version
@@ -63,7 +62,6 @@ RUN set -eux; \
 	make -j "$nproc" \
 		"EXTRA_CFLAGS=${EXTRA_CFLAGS:-}" \
 		"LDFLAGS=${LDFLAGS:--Wl},-rpath='\$\$ORIGIN/../lib'" \
-		"PROFILE_TASK=${PROFILE_TASK:-}" \
 		python \
 	; \
 	make install; \
@@ -77,12 +75,9 @@ RUN set -eux; \
 	cd /; \
 	rm -rf /usr/src/python; \
 	\
-	find /usr/local -depth \
-		\( \
-			\( -type d -a \( -name test -o -name tests -o -name idle_test \) \) \
-			-o \( -type f -a \( -name '*.pyc' -o -name '*.pyo' -o -name 'libpython*.a' \) \) \
-		\) -exec rm -rf '{}' + \
-	; \
+	find /usr/local -type d \( -name test -o -name idle_test -o -name __pycache__ \) -exec rm -rf '{}' +; \
+	find /usr/local -type f -name libpython3*.a -delete; \
+	find /usr/local -type f -name *test*.so -delete; \
 	\
 	ldconfig; \
 	\
