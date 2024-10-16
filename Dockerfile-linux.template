@@ -251,8 +251,8 @@ RUN set -eux; \
 	\
 	find /usr/local -depth \
 		\( \
-			\( -type d -a \( -name test -o -name tests -o -name idle_test \) \) \
-			-o \( -type f -a \( -name '*.pyc' -o -name '*.pyo' -o -name 'libpython*.a' \) \) \
+			\( -type d -a \( -name test -o -name tests -o -name idle_test -o -name __pycache__ \) \) -o \
+			\( -type f -a \( -name '*.py[co]' -o -name 'libpython*.a' -o -name *test*.so \) \) \
 		\) -exec rm -rf '{}' + \
 	; \
 	\
